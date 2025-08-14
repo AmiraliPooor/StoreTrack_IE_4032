@@ -89,7 +89,7 @@ export default function Orders() {
     }
 
     const order = {
-      customer: { name: form.customerName.trim() },
+      customerName: form.customerName.trim(),
       items: form.items,
       createdAt: new Date().toISOString().split("T")[0],
       status: "Pending",
@@ -101,7 +101,7 @@ export default function Orders() {
   };
 
   const filteredOrders = orders.filter((o) => {
-    return o.customer.name.includes(filter) || String(o.id).includes(filter);
+    return o.customerName.includes(filter) || String(o.id).includes(filter);
   });
 
   return (
@@ -147,7 +147,7 @@ export default function Orders() {
           {filteredOrders.map((order) => (
             <tr key={order.id}>
               <td>{order.id}</td>
-              <td>{order.customer.name}</td>
+              <td>{order.customerName}</td>
               <td>{order.createdAt}</td>
               <td>{order.status}</td>
               <td>

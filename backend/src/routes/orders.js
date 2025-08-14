@@ -5,7 +5,6 @@ import { HttpError } from '../lib/errors.js';
 
 const router = Router();
 
-// GET /api/orders?filter=...  (by customer name or id)
 router.get('/', async (req, res) => {
   const { filter = '' } = req.query;
   const asString = String(filter);
@@ -23,17 +22,14 @@ router.get('/', async (req, res) => {
     include: { items: true }
   });
 
-  // match your UI shape (createdAtStr & items list)
   res.json(orders);
 });
 
-// POST /api/orders
 router.post('/', async (req, res, next) => {
   try {
     const payload = orderCreateSchema.parse(req.body);
 
     const result = await prisma.$transaction(async (tx) => {
-      // validate stock first
       for (const item of payload.items) {
         const p = await tx.product.findFirst({ where: { id: item.productId, isDeleted: false } });
         if (!p) throw new HttpError(400, `Product ${item.productId} not found`);
@@ -42,7 +38,6 @@ router.post('/', async (req, res, next) => {
         }
       }
 
-      // create order
       const order = await tx.order.create({
         data: {
           customerName: payload.customerName,
@@ -51,7 +46,6 @@ router.post('/', async (req, res, next) => {
         }
       });
 
-      // create items + update stock + transactions
       for (const item of payload.items) {
         const p = await tx.product.findUnique({ where: { id: item.productId } });
         await tx.orderItem.create({
@@ -87,7 +81,6 @@ router.post('/', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// PATCH /api/orders/:id/status
 router.patch('/:id/status', async (req, res, next) => {
   try {
     const id = Number(req.params.id);
@@ -96,7 +89,6 @@ router.patch('/:id/status', async (req, res, next) => {
     const order = await prisma.order.findUnique({ where: { id } });
     if (!order) throw new HttpError(404, 'Order not found');
 
-    // Match your UI: do NOT restock on Cancelled (UI doesn’t do it)
     const updated = await prisma.order.update({
       where: { id },
       data: { status }

@@ -22,17 +22,24 @@ export default function Dashboard() {
 
     // تعداد سفارشات امروز
     const today = new Date().toISOString().split("T")[0];
-    const todayOrders = orders.filter((o) => o.createdAt === today);
+
+    const todayOrders = orders.filter((o) => {
+      if (!o.createdAt) return false; // skip invalid dates
+      const orderDate = new Date(o.createdAt).toISOString().split("T")[0];
+      return orderDate === today;
+    });
     setOrdersCount(todayOrders.length);
 
     // درآمد کل
     let revenue = 0;
-    orders.forEach((order) => {
-      order.items.forEach((item) => {
-        const product = products.find((p) => p.id === item.productId);
-        if (product) revenue += product.price * item.quantity;
+    orders
+      .filter((o) => o.status === "Shipped")
+      .forEach((order) => {
+        order.items.forEach((item) => {
+          const product = products.find((p) => p.id === item.productId);
+          if (product) revenue += product.price * item.quantity;
+        });
       });
-    });
     setTotalRevenue(revenue);
 
     // داده‌های نمودار فروش روزانه 7 روز گذشته
@@ -44,16 +51,19 @@ export default function Dashboard() {
       salesMap[dayStr] = 0;
     }
 
-    orders.forEach((order) => {
-      if (salesMap.hasOwnProperty(order.createdAt)) {
-        order.items.forEach((item) => {
-          const product = products.find((p) => p.id === item.productId);
-          if (product) {
-            salesMap[order.createdAt] += product.price * item.quantity;
-          }
-        });
-      }
-    });
+    orders
+      .filter((o) => o.status === "Shipped")
+      .forEach((order) => {
+        const dateKey = new Date(order.createdAt).toISOString().split("T")[0];
+        if (salesMap.hasOwnProperty(dateKey)) {
+          order.items.forEach((item) => {
+            const product = products.find((p) => p.id === item.productId);
+            if (product) {
+              salesMap[dateKey] += product.price * item.quantity;
+            }
+          });
+        }
+      });
 
     setSalesData({
       labels: Object.keys(salesMap),

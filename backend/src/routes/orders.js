@@ -86,15 +86,45 @@ router.patch('/:id/status', async (req, res, next) => {
     const id = Number(req.params.id);
     const { status } = orderStatusSchema.parse(req.body);
 
-    const order = await prisma.order.findUnique({ where: { id } });
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: { items: true }
+    });
     if (!order) throw new HttpError(404, 'Order not found');
 
-    const updated = await prisma.order.update({
-      where: { id },
-      data: { status }
+    const result = await prisma.$transaction(async (tx) => {
+      // Update the status
+      const updatedOrder = await tx.order.update({
+        where: { id },
+        data: { status }
+      });
+
+      // If cancelling, restore stock and log IN transaction
+      if (status === 'Cancelled') {
+        for (const item of order.items) {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: { stock: { increment: item.quantity } }
+          });
+
+          await tx.transaction.create({
+            data: {
+              productId: item.productId,
+              type: 'IN', // Returning stock
+              quantity: item.quantity
+            }
+          });
+        }
+      }
+
+      return updatedOrder;
     });
-    res.json(updated);
-  } catch (e) { next(e); }
+
+    res.json(result);
+  } catch (e) {
+    next(e);
+  }
 });
+
 
 export default router;

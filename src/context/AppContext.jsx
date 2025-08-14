@@ -53,7 +53,7 @@ async function deleteProduct(id) {
 // addOrder(order)
 async function addOrder(order) {
   const { data } = await api.post('/api/orders', {
-    customerName: order.customer.name,
+    customerName: order.customerName,
     createdAtStr: order.createdAt,
     items: order.items
   });

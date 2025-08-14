@@ -14,6 +14,12 @@ export default function Orders() {
     updateOrderStatus,
   } = useAppContext();
 
+  const statusMap = {
+    Cancelled: "لغو شده",
+    Shipped: "ارسال شده",
+    Pending: "در انتظار",
+  };
+
   const [form, setForm] = useState({
     customerName: "",
     items: [],
@@ -148,8 +154,8 @@ export default function Orders() {
             <tr key={order.id}>
               <td>{order.id}</td>
               <td>{order.customerName}</td>
-              <td>{order.createdAt}</td>
-              <td>{order.status}</td>
+              <td>{new Date(order.createdAt).toLocaleString("fa-IR")}</td>
+              <td>{statusMap[order.status]}</td>
               <td>
                 {order.items.map((item) => {
                   const product = products.find((p) => p.id === item.productId);
@@ -182,7 +188,7 @@ export default function Orders() {
                     </button>
                   </>
                 )}
-                {order.status !== "Pending" && <em>{order.status}</em>}
+                {order.status !== "Pending" && <em>{statusMap[order.status]}</em>}
               </td>
             </tr>
           ))}

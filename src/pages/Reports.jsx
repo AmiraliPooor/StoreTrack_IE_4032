@@ -14,21 +14,23 @@ export default function Reports() {
   useEffect(() => {
     // گزارش فروش مجموع کالاها
     const sales = products.map(product => {
-      let totalSold = 0
-      orders.forEach(order => {
-        order.items.forEach(item => {
-          if (item.productId === product.id) {
-            totalSold += item.quantity
-          }
-        })
-      })
+      let totalSold = 0;
+      orders
+        .filter(o => o.status === "Shipped")
+        .forEach(order => {
+          order.items.forEach(item => {
+            if (item.productId === product.id) {
+              totalSold += item.quantity;
+            }
+          });
+        });
       return {
         id: product.id,
         name: product.name,
         totalSold,
         revenue: totalSold * product.price
-      }
-    })
+      };
+    });
     setSalesReport(sales)
 
     // کالاهای با موجودی پایین
